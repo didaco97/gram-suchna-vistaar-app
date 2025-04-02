@@ -30,7 +30,12 @@ interface SerpNewsItem {
 const News = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<Record<string, boolean>>({
+    'local': false,
+    'agriculture': false,
+    'healthcare': false,
+    'education': false
+  });
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useState<string>('');
   
@@ -59,10 +64,11 @@ const News = () => {
   
   // Function to fetch news for a specific category
   const fetchCategoryNews = async (category: string) => {
-    setLoading(true);
-    setError(null);
+    // Set category-specific loading state
+    setLoading(prev => ({ ...prev, [getCategoryKey(category)]: true }));
     
     try {
+      console.log(`Fetching news for category: ${category}`);
       const { data, error } = await supabase.functions.invoke('fetch-news', {
         body: { category }
       });
@@ -82,19 +88,21 @@ const News = () => {
       
       // Format and store news based on category
       const formattedNews = formatNewsData(data.news, category);
+      console.log(`Received ${formattedNews.length} news items for ${category}`);
       
-      switch (category.toLowerCase()) {
+      // Update the appropriate state based on category
+      switch (getCategoryKey(category)) {
+        case 'local':
+          setLocalNews(formattedNews);
+          break;
+        case 'agriculture':
+          setAgricultureNews(formattedNews);
+          break;
         case 'healthcare':
           setHealthNews(formattedNews);
           break;
         case 'education':
           setEducationNews(formattedNews);
-          break;
-        case 'agriculture':
-          setAgricultureNews(formattedNews);
-          break;
-        default:
-          setLocalNews(formattedNews);
           break;
       }
       
@@ -107,7 +115,21 @@ const News = () => {
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      // Clear category-specific loading state
+      setLoading(prev => ({ ...prev, [getCategoryKey(category)]: false }));
+    }
+  };
+  
+  // Helper to normalize category names for state keys
+  const getCategoryKey = (category: string): string => {
+    if (category.toLowerCase().includes('healthcare') || category.toLowerCase().includes('health')) {
+      return 'healthcare';
+    } else if (category.toLowerCase().includes('education')) {
+      return 'education';
+    } else if (category.toLowerCase().includes('agriculture') || category.toLowerCase().includes('agri')) {
+      return 'agriculture';
+    } else {
+      return 'local';
     }
   };
   
@@ -116,9 +138,9 @@ const News = () => {
     if (user) {
       // Fetch news for each category
       fetchCategoryNews('local news');
+      fetchCategoryNews('agriculture');
       fetchCategoryNews('healthcare');
       fetchCategoryNews('education');
-      fetchCategoryNews('agriculture');
     }
   }, [user, profile]);
   
@@ -240,14 +262,14 @@ const News = () => {
           <TabsTrigger value="education">Education</TabsTrigger>
         </TabsList>
         
-        {loading && (
+        {Object.values(loading).some(isLoading => isLoading) && (
           <div className="flex h-40 w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-gramsuchna-green" />
             <span className="ml-2">Loading news...</span>
           </div>
         )}
         
-        {error && (
+        {error && !Object.values(loading).some(isLoading => isLoading) && (
           <div className="flex h-40 w-full flex-col items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4">
             <AlertCircle className="h-8 w-8 text-red-500" />
             <p className="mt-2 text-center text-red-600">{error}</p>
@@ -256,9 +278,9 @@ const News = () => {
               className="mt-4"
               onClick={() => {
                 fetchCategoryNews('local news');
+                fetchCategoryNews('agriculture');
                 fetchCategoryNews('healthcare');
                 fetchCategoryNews('education');
-                fetchCategoryNews('agriculture');
               }}
             >
               Try Again
@@ -266,7 +288,7 @@ const News = () => {
           </div>
         )}
         
-        {!loading && !error && (
+        {!Object.values(loading).some(isLoading => isLoading) && !error && (
           <>
             <TabsContent value="all" className="animate-fade-in">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -277,7 +299,7 @@ const News = () => {
                   ...getNewsToDisplay('agriculture').slice(0, 2)
                 ].map((news, index) => (
                   <NewsCard 
-                    key={index}
+                    key={`all-${index}`}
                     title={news.title}
                     summary={news.summary}
                     date={news.date}
@@ -293,12 +315,12 @@ const News = () => {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {getNewsToDisplay('agriculture').map((news, index) => (
                   <NewsCard 
-                    key={index}
+                    key={`agriculture-${index}`}
                     title={news.title}
                     summary={news.summary}
                     date={news.date}
                     source={news.source}
-                    category={news.category}
+                    category="Agriculture"
                     link={news.link}
                   />
                 ))}
@@ -309,12 +331,12 @@ const News = () => {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {getNewsToDisplay('healthcare').map((news, index) => (
                   <NewsCard 
-                    key={index}
+                    key={`healthcare-${index}`}
                     title={news.title}
                     summary={news.summary}
                     date={news.date}
                     source={news.source}
-                    category={news.category}
+                    category="Healthcare"
                     link={news.link}
                   />
                 ))}
@@ -325,12 +347,12 @@ const News = () => {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {getNewsToDisplay('education').map((news, index) => (
                   <NewsCard 
-                    key={index}
+                    key={`education-${index}`}
                     title={news.title}
                     summary={news.summary}
                     date={news.date}
                     source={news.source}
-                    category={news.category}
+                    category="Education"
                     link={news.link}
                   />
                 ))}

@@ -38,7 +38,18 @@ const NewsCard: React.FC<NewsCardProps> = ({
   const formattedSource = typeof source === 'string' ? source : "News Source";
   
   // Format category to ensure it's not empty and is a string
-  const formattedCategory = typeof category === 'string' ? category : "News";
+  let formattedCategory = typeof category === 'string' ? category : "News";
+  
+  // Normalize category for display
+  if (formattedCategory.toLowerCase().includes('healthcare') || formattedCategory.toLowerCase().includes('health')) {
+    formattedCategory = "Healthcare";
+  } else if (formattedCategory.toLowerCase().includes('education')) {
+    formattedCategory = "Education";
+  } else if (formattedCategory.toLowerCase().includes('agriculture') || formattedCategory.toLowerCase().includes('agri')) {
+    formattedCategory = "Agriculture";
+  } else if (formattedCategory.toLowerCase().includes('local') || formattedCategory.toLowerCase() === 'news') {
+    formattedCategory = "Local News";
+  }
   
   // Format link to ensure it's not empty
   const formattedLink = isExternalLink ? link : (link || "#");

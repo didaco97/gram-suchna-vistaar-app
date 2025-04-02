@@ -70,13 +70,15 @@ async function fetchNews(params: NewsParams) {
         .slice(0, 10);
     }
     
-    // Ensure each news item has valid properties
+    // Add category metadata to each news item
     const validatedResults = newsResults.map((item: any) => ({
       title: typeof item.title === 'string' ? item.title : "Untitled",
       link: typeof item.link === 'string' ? item.link : "#",
       snippet: typeof item.snippet === 'string' ? item.snippet : "",
       source: typeof item.source === 'string' ? item.source : "News Source",
-      date: typeof item.date === 'string' ? item.date : "Recent"
+      date: typeof item.date === 'string' ? item.date : "Recent",
+      // Include the original search category as metadata
+      category: query.toLowerCase()
     }));
     
     console.log(`Extracted ${validatedResults.length} news results for "${searchQuery}"`);
@@ -128,6 +130,8 @@ serve(async (req) => {
     const requestData = await req.json();
     const { category } = requestData;
     
+    console.log(`Requested category: ${category || "news"}`);
+    
     // Build location string from profile
     let location = "";
     if (profile) {
@@ -139,10 +143,10 @@ serve(async (req) => {
     }
     
     console.log(`User location: ${location || "Unknown"}`);
-    console.log(`Requested category: ${category || "news"}`);
     
     try {
       // Fetch news based on category and location
+      // Ensure we're using the exact category string from the request
       const newsResults = await fetchNews({
         query: category || "news",
         location: location || undefined
@@ -151,7 +155,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           news: newsResults,
-          location: location || "Unknown"
+          location: location || "Unknown",
+          category: category || "news" // Return the original category
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
