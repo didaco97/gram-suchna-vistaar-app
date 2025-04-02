@@ -1,8 +1,20 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthForms from '@/components/AuthForms';
+import { useAuth } from '@/context/AuthContext';
 
 const Login = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to home if already logged in
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
   return (
     <div className="app-container flex min-h-[80vh] flex-col items-center justify-center py-12">
       <div className="w-full max-w-md">

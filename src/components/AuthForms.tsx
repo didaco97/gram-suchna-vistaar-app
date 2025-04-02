@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export const AuthForms = () => {
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const { signIn, signUp, loading } = useAuth();
   const navigate = useNavigate();
 
   // Login form state
@@ -21,53 +20,27 @@ export const AuthForms = () => {
 
   // Register form state
   const [registerData, setRegisterData] = useState({
-    name: "",
     email: "",
     password: "",
     confirmPassword: ""
   });
 
   // Handle login
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    
-    // Simulate login
-    setTimeout(() => {
-      toast({
-        title: "Logged in successfully",
-        description: "Welcome back to Gram Suchna",
-      });
-      setLoading(false);
-      navigate("/");
-    }, 1500);
+    await signIn(loginData.email, loginData.password);
   };
 
   // Handle register
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate password match
     if (registerData.password !== registerData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
       return;
     }
     
-    setLoading(true);
-    
-    // Simulate registration
-    setTimeout(() => {
-      toast({
-        title: "Registration successful",
-        description: "Welcome to Gram Suchna",
-      });
-      setLoading(false);
-      navigate("/");
-    }, 1500);
+    await signUp(registerData.email, registerData.password);
   };
 
   return (
@@ -135,16 +108,6 @@ export const AuthForms = () => {
             </CardHeader>
             <form onSubmit={handleRegister}>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="Your Name" 
-                    value={registerData.name}
-                    onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
-                    required
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="register-email">Email</Label>
                   <Input 

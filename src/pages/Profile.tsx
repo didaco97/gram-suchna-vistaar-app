@@ -1,26 +1,53 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { User, Bell, Settings, LogOut, Save, Bookmark } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const Profile = () => {
+  const { user, profile, signOut, setProfile } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
-  // Mock user data - in a real app, this would come from authentication context
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+  
+  // Profile form state
   const [userData, setUserData] = useState({
-    name: "Rajesh Kumar",
-    email: "rajesh.kumar@example.com",
-    phone: "9876543210",
-    village: "Chandpur",
-    district: "Varanasi",
-    state: "Uttar Pradesh"
+    full_name: profile?.full_name || '',
+    age: profile?.age || '',
+    category: profile?.category || '',
+    village: profile?.village || '',
+    district: profile?.district || '',
+    state: profile?.state || ''
   });
+  
+  // Update local form state when profile data loads
+  useEffect(() => {
+    if (profile) {
+      setUserData({
+        full_name: profile.full_name || '',
+        age: profile.age?.toString() || '',
+        category: profile.category || '',
+        village: profile.village || '',
+        district: profile.district || '',
+        state: profile.state || ''
+      });
+    }
+  }, [profile]);
   
   const [notifications, setNotifications] = useState({
     schemes: true,
@@ -36,12 +63,44 @@ const Profile = () => {
     { id: 3, title: "PM Poshan", category: "Education" }
   ];
 
-  const handleProfileUpdate = (e: React.FormEvent) => {
+  const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been updated successfully",
-    });
+    
+    if (!user) return;
+    
+    try {
+      const updates = {
+        id: user.id,
+        full_name: userData.full_name,
+        age: userData.age ? parseInt(userData.age as string) : null,
+        category: userData.category,
+        village: userData.village,
+        district: userData.district,
+        state: userData.state,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(updates);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been updated successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Update Failed",
+        description: error.message || "An error occurred while updating your profile",
+        variant: "destructive"
+      });
+      console.error('Error updating profile:', error);
+    }
   };
 
   const handleNotificationUpdate = (e: React.FormEvent) => {
@@ -52,13 +111,13 @@ const Profile = () => {
     });
   };
 
-  const handleLogout = () => {
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully",
-    });
-    // In a real app, this would clear authentication state and redirect to login
+  const handleLogout = async () => {
+    await signOut();
   };
+
+  if (!user) {
+    return null; // or a loading spinner
+  }
 
   return (
     <div className="app-container py-8">
@@ -75,8 +134,8 @@ const Profile = () => {
                 <div className="mb-4 rounded-full bg-gramsuchna-cream p-4">
                   <User className="h-12 w-12 text-gramsuchna-green" />
                 </div>
-                <h2 className="text-xl font-semibold text-gramsuchna-brown">{userData.name}</h2>
-                <p className="text-sm text-muted-foreground">{userData.village}, {userData.district}</p>
+                <h2 className="text-xl font-semibold text-gramsuchna-brown">{profile?.full_name || user.email}</h2>
+                <p className="text-sm text-muted-foreground">{profile?.village || 'Village'}, {profile?.district || 'District'}</p>
               </div>
             </CardContent>
           </Card>
@@ -127,32 +186,42 @@ const Profile = () => {
                         <Label htmlFor="name">Full Name</Label>
                         <Input 
                           id="name" 
-                          value={userData.name} 
-                          onChange={(e) => setUserData({...userData, name: e.target.value})}
+                          value={userData.full_name as string} 
+                          onChange={(e) => setUserData({...userData, full_name: e.target.value})}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="age">Age</Label>
                         <Input 
-                          id="email" 
-                          type="email" 
-                          value={userData.email} 
-                          onChange={(e) => setUserData({...userData, email: e.target.value})}
+                          id="age" 
+                          type="number" 
+                          value={userData.age as string} 
+                          onChange={(e) => setUserData({...userData, age: e.target.value})}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input 
-                          id="phone" 
-                          value={userData.phone} 
-                          onChange={(e) => setUserData({...userData, phone: e.target.value})}
-                        />
+                        <Label htmlFor="category">Category</Label>
+                        <Select 
+                          value={userData.category as string} 
+                          onValueChange={(value) => setUserData({...userData, category: value})}
+                        >
+                          <SelectTrigger id="category">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="General">General</SelectItem>
+                            <SelectItem value="OBC">OBC</SelectItem>
+                            <SelectItem value="SC">SC</SelectItem>
+                            <SelectItem value="ST">ST</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="village">Village/Town</Label>
                         <Input 
                           id="village" 
-                          value={userData.village} 
+                          value={userData.village as string} 
                           onChange={(e) => setUserData({...userData, village: e.target.value})}
                         />
                       </div>
@@ -160,7 +229,7 @@ const Profile = () => {
                         <Label htmlFor="district">District</Label>
                         <Input 
                           id="district" 
-                          value={userData.district} 
+                          value={userData.district as string} 
                           onChange={(e) => setUserData({...userData, district: e.target.value})}
                         />
                       </div>
@@ -168,7 +237,7 @@ const Profile = () => {
                         <Label htmlFor="state">State</Label>
                         <Input 
                           id="state" 
-                          value={userData.state} 
+                          value={userData.state as string} 
                           onChange={(e) => setUserData({...userData, state: e.target.value})}
                         />
                       </div>
