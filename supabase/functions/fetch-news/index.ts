@@ -39,18 +39,39 @@ async function fetchNews(params: NewsParams) {
   url.searchParams.append("api_key", apiKey);
   url.searchParams.append("engine", "google_news");
   url.searchParams.append("q", searchQuery);
-  url.searchParams.append("num", "5"); // Limit to 5 news articles
+  url.searchParams.append("num", "10"); // Increased to 10 news articles
   
   try {
     console.log(`Fetching news for query: "${searchQuery}"`);
     const response = await fetch(url.toString());
+    
     if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+      const errorText = await response.text();
+      console.error(`API error (${response.status}):`, errorText);
+      throw new Error(`API request failed with status ${response.status}: ${errorText}`);
     }
     
     const data = await response.json();
-    console.log(`Received ${data.news_results?.length || 0} news results`);
-    return data.news_results || [];
+    
+    // Check if we have news_results, otherwise try to extract news from organic_results
+    let newsResults = data.news_results || [];
+    
+    if (newsResults.length === 0 && data.organic_results) {
+      // Try to extract news-like items from organic results
+      newsResults = data.organic_results
+        .filter((item: any) => item.title && item.link && (item.snippet || item.description))
+        .map((item: any) => ({
+          title: item.title,
+          link: item.link,
+          snippet: item.snippet || item.description || "",
+          source: item.source || "News Source",
+          date: item.date || "Recent"
+        }))
+        .slice(0, 10);
+    }
+    
+    console.log(`Extracted ${newsResults.length} news results for "${searchQuery}"`);
+    return newsResults;
   } catch (error) {
     console.error("Error fetching news:", error);
     throw error;
@@ -82,7 +103,7 @@ serve(async (req) => {
     
     if (error || !user) {
       return new Response(
-        JSON.stringify({ error: "Authentication failed" }),
+        JSON.stringify({ error: "Authentication failed", details: error?.message }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -95,7 +116,8 @@ serve(async (req) => {
       .single();
     
     // Get request parameters
-    const { category } = await req.json();
+    const requestData = await req.json();
+    const { category } = requestData;
     
     // Build location string from profile
     let location = "";
@@ -110,23 +132,40 @@ serve(async (req) => {
     console.log(`User location: ${location || "Unknown"}`);
     console.log(`Requested category: ${category || "news"}`);
     
-    // Fetch news based on category and location
-    const newsResults = await fetchNews({
-      query: category || "news",
-      location: location || undefined
-    });
-    
-    return new Response(
-      JSON.stringify({ 
-        news: newsResults,
-        location: location || "Unknown"
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    try {
+      // Fetch news based on category and location
+      const newsResults = await fetchNews({
+        query: category || "news",
+        location: location || undefined
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          news: newsResults,
+          location: location || "Unknown"
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } catch (fetchError) {
+      console.error(`Error fetching ${category} news:`, fetchError);
+      
+      // Return a more specific error for debugging
+      return new Response(
+        JSON.stringify({ 
+          error: `Failed to fetch ${category} news`, 
+          details: fetchError.message,
+          fallback: true 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
   } catch (error) {
     console.error("Error in fetch-news function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, stack: error.stack }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
