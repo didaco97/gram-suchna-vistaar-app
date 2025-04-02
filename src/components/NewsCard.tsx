@@ -22,6 +22,9 @@ const NewsCard: React.FC<NewsCardProps> = ({
   category,
   link 
 }) => {
+  // Check if the link is external (has http/https) or internal
+  const isExternalLink = link && (link.startsWith('http://') || link.startsWith('https://'));
+  
   return (
     <Card className="news-card overflow-hidden">
       <CardHeader className="pb-2">
@@ -53,10 +56,17 @@ const NewsCard: React.FC<NewsCardProps> = ({
           className="text-gramsuchna-green hover:bg-gramsuchna-cream"
           asChild
         >
-          <a href={link}>
-            <span>Read</span>
-            <ArrowRight className="ml-1 h-3 w-3" />
-          </a>
+          {isExternalLink ? (
+            <a href={link} target="_blank" rel="noopener noreferrer">
+              <span>Read</span>
+              <ArrowRight className="ml-1 h-3 w-3" />
+            </a>
+          ) : (
+            <a href={link || '#'}>
+              <span>Read</span>
+              <ArrowRight className="ml-1 h-3 w-3" />
+            </a>
+          )}
         </Button>
       </CardFooter>
     </Card>

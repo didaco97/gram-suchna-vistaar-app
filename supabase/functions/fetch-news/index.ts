@@ -2,6 +2,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 
+// CORS headers for browser requests
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 // SerpAPI Google News endpoint
 const SERPAPI_BASE_URL = "https://serpapi.com/search.json";
 
@@ -36,12 +42,14 @@ async function fetchNews(params: NewsParams) {
   url.searchParams.append("num", "5"); // Limit to 5 news articles
   
   try {
+    console.log(`Fetching news for query: "${searchQuery}"`);
     const response = await fetch(url.toString());
     if (!response.ok) {
       throw new Error(`API request failed with status ${response.status}`);
     }
     
     const data = await response.json();
+    console.log(`Received ${data.news_results?.length || 0} news results`);
     return data.news_results || [];
   } catch (error) {
     console.error("Error fetching news:", error);
@@ -50,13 +58,21 @@ async function fetchNews(params: NewsParams) {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }
+  
   try {
     // Check if request is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: "No authorization header" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
@@ -67,7 +83,7 @@ serve(async (req) => {
     if (error || !user) {
       return new Response(
         JSON.stringify({ error: "Authentication failed" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
@@ -91,6 +107,9 @@ serve(async (req) => {
       location = locationParts.join(", ");
     }
     
+    console.log(`User location: ${location || "Unknown"}`);
+    console.log(`Requested category: ${category || "news"}`);
+    
     // Fetch news based on category and location
     const newsResults = await fetchNews({
       query: category || "news",
@@ -102,12 +121,13 @@ serve(async (req) => {
         news: newsResults,
         location: location || "Unknown"
       }),
-      { headers: { "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("Error in fetch-news function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
