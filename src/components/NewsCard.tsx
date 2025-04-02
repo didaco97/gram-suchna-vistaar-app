@@ -26,23 +26,29 @@ const NewsCard: React.FC<NewsCardProps> = ({
   const isExternalLink = link && (link.startsWith('http://') || link.startsWith('https://'));
   
   // Format title to ensure it's not too long
-  const formattedTitle = title.length > 60 ? `${title.substring(0, 60)}...` : title;
+  const formattedTitle = title ? (title.length > 60 ? `${title.substring(0, 60)}...` : title) : "Untitled News";
   
-  // Format summary to ensure it's not empty
-  const formattedSummary = summary || "No additional details available for this news item.";
+  // Format summary to ensure it's not empty and is a string
+  const formattedSummary = typeof summary === 'string' ? summary : "No additional details available for this news item.";
   
-  // Format date to ensure it's not empty
-  const formattedDate = date || "Recent";
+  // Format date to ensure it's not empty and is a string
+  const formattedDate = typeof date === 'string' ? date : "Recent";
   
-  // Format source to ensure it's not empty
-  const formattedSource = source || "News Source";
+  // Format source to ensure it's not empty and is a string
+  const formattedSource = typeof source === 'string' ? source : "News Source";
+  
+  // Format category to ensure it's not empty and is a string
+  const formattedCategory = typeof category === 'string' ? category : "News";
+  
+  // Format link to ensure it's not empty
+  const formattedLink = isExternalLink ? link : (link || "#");
   
   return (
     <Card className="news-card overflow-hidden h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <Badge variant="outline" className="bg-gramsuchna-cream text-gramsuchna-brown">
-            {category}
+            {formattedCategory}
           </Badge>
           <div className="flex items-center space-x-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
@@ -69,12 +75,12 @@ const NewsCard: React.FC<NewsCardProps> = ({
           asChild
         >
           {isExternalLink ? (
-            <a href={link} target="_blank" rel="noopener noreferrer">
+            <a href={formattedLink} target="_blank" rel="noopener noreferrer">
               <span>Read</span>
               <ArrowRight className="ml-1 h-3 w-3" />
             </a>
           ) : (
-            <a href={link || '#'}>
+            <a href={formattedLink}>
               <span>Read</span>
               <ArrowRight className="ml-1 h-3 w-3" />
             </a>

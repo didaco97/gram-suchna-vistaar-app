@@ -61,8 +61,8 @@ async function fetchNews(params: NewsParams) {
       newsResults = data.organic_results
         .filter((item: any) => item.title && item.link && (item.snippet || item.description))
         .map((item: any) => ({
-          title: item.title,
-          link: item.link,
+          title: item.title || "Untitled",
+          link: item.link || "#",
           snippet: item.snippet || item.description || "",
           source: item.source || "News Source",
           date: item.date || "Recent"
@@ -70,8 +70,17 @@ async function fetchNews(params: NewsParams) {
         .slice(0, 10);
     }
     
-    console.log(`Extracted ${newsResults.length} news results for "${searchQuery}"`);
-    return newsResults;
+    // Ensure each news item has valid properties
+    const validatedResults = newsResults.map((item: any) => ({
+      title: typeof item.title === 'string' ? item.title : "Untitled",
+      link: typeof item.link === 'string' ? item.link : "#",
+      snippet: typeof item.snippet === 'string' ? item.snippet : "",
+      source: typeof item.source === 'string' ? item.source : "News Source",
+      date: typeof item.date === 'string' ? item.date : "Recent"
+    }));
+    
+    console.log(`Extracted ${validatedResults.length} news results for "${searchQuery}"`);
+    return validatedResults;
   } catch (error) {
     console.error("Error fetching news:", error);
     throw error;
@@ -165,7 +174,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in fetch-news function:", error);
     return new Response(
-      JSON.stringify({ error: error.message, stack: error.stack }),
+      JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

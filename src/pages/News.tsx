@@ -5,7 +5,7 @@ import NewsCard from '@/components/NewsCard';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Newspaper, MapPin, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // News item type definition
@@ -42,13 +42,18 @@ const News = () => {
   
   // Format news data from SerpAPI to our news card format
   const formatNewsData = (news: SerpNewsItem[], category: string): NewsItem[] => {
+    if (!Array.isArray(news)) {
+      console.error('News data is not an array:', news);
+      return [];
+    }
+    
     return news.map(item => ({
-      title: item.title,
-      summary: item.snippet,
-      date: item.date || 'Recent',
-      source: item.source,
+      title: typeof item.title === 'string' ? item.title : 'Untitled News',
+      summary: typeof item.snippet === 'string' ? item.snippet : 'No details available',
+      date: typeof item.date === 'string' ? item.date : 'Recent',
+      source: typeof item.source === 'string' ? item.source : 'News Source',
       category: category,
-      link: item.link
+      link: typeof item.link === 'string' ? item.link : '#'
     }));
   };
   
@@ -67,6 +72,12 @@ const News = () => {
       // Update location from the API response
       if (data.location) {
         setLocation(data.location);
+      }
+      
+      // Check if news property exists in data
+      if (!data.news || !Array.isArray(data.news)) {
+        console.error(`Invalid news data for ${category}:`, data);
+        throw new Error(`Invalid response format for ${category} news`);
       }
       
       // Format and store news based on category
