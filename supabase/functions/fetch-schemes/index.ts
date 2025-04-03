@@ -34,12 +34,12 @@ serve(async (req) => {
       category = urlCategory;
     } 
     
-    // Also check for params in the request body (used by function.invoke)
+    // Also check for body params (used by function.invoke)
     if (req.method === 'POST') {
       try {
-        const { category: bodyCategory } = await req.json();
-        if (bodyCategory) {
-          category = bodyCategory;
+        const body = await req.json();
+        if (body && body.category) {
+          category = body.category;
         }
       } catch (e) {
         // If JSON parsing fails, we already have the category from URL or default
