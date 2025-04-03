@@ -23,9 +23,29 @@ serve(async (req) => {
   }
 
   try {
-    // Get the category from the request URL
-    const url = new URL(req.url)
-    const category = url.searchParams.get('category') || 'all'
+    // Get the category from the request parameters
+    // Update to handle both query params in URL and params from function.invoke
+    let category = 'all';
+    
+    // Check if we have URL search params
+    const url = new URL(req.url);
+    const urlCategory = url.searchParams.get('category');
+    if (urlCategory) {
+      category = urlCategory;
+    } 
+    
+    // Also check for params in the request body (used by function.invoke)
+    if (req.method === 'POST') {
+      try {
+        const { category: bodyCategory } = await req.json();
+        if (bodyCategory) {
+          category = bodyCategory;
+        }
+      } catch (e) {
+        // If JSON parsing fails, we already have the category from URL or default
+        console.log('JSON parsing error:', e);
+      }
+    }
     
     console.log(`Fetching schemes for category: ${category}`)
 

@@ -18,8 +18,9 @@ export function useSchemes(category: string = 'all') {
     try {
       console.info(`Fetching schemes for category: ${category}`);
       
+      // Fix: Pass category as a URLSearchParams object in the 'params' property instead of 'query'
       const { data, error } = await supabase.functions.invoke('fetch-schemes', {
-        query: { category }
+        params: { category }
       });
       
       if (error) {
