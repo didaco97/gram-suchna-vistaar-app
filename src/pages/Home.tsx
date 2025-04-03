@@ -6,34 +6,58 @@ import { Button } from '@/components/ui/button';
 import SchemeCard from '@/components/SchemeCard';
 import NewsCard from '@/components/NewsCard';
 import { ArrowRight, Tractor, Stethoscope, GraduationCap, Newspaper } from 'lucide-react';
+import { useSchemes } from '@/hooks/useSchemes';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Home = () => {
-  const featuredSchemes = [
-    {
-      title: "Pradhan Mantri Kisan Samman Nidhi",
-      description: "Income support of ₹6,000 per year in three equal installments to small and marginal farmer families.",
-      category: "Agriculture",
-      deadline: "31 Dec 2023",
-      icon: <Tractor className="h-5 w-5" />,
-      link: "/agriculture/pm-kisan"
-    },
-    {
-      title: "Ayushman Bharat Yojana",
-      description: "Health insurance coverage up to ₹5 lakh per family per year for secondary and tertiary care hospitalization.",
-      category: "Healthcare",
-      deadline: "No deadline",
-      icon: <Stethoscope className="h-5 w-5" />,
-      link: "/healthcare/ayushman-bharat"
-    },
-    {
-      title: "PM POSHAN Scheme",
-      description: "Provides mid-day meals to improve nutritional levels among school children.",
-      category: "Education",
-      deadline: "No deadline",
-      icon: <GraduationCap className="h-5 w-5" />,
-      link: "/education/pm-poshan"
+  const { schemes: allSchemes, isLoading: schemesLoading } = useSchemes('all');
+
+  // Get featured schemes - first 3
+  const featuredSchemes = React.useMemo(() => {
+    if (schemesLoading || !allSchemes.length) return [];
+    
+    // Group schemes by category and take 1 from each major category if possible
+    const categories = {'Agriculture': [], 'Healthcare': [], 'Education': []};
+    const othersSchemes = [];
+    
+    for (const scheme of allSchemes) {
+      if (categories[scheme.category]) {
+        categories[scheme.category].push(scheme);
+      } else {
+        othersSchemes.push(scheme);
+      }
     }
-  ];
+    
+    // Try to get one from each category first
+    let featured = [];
+    for (const category in categories) {
+      if (categories[category].length > 0) {
+        featured.push(categories[category][0]);
+      }
+    }
+    
+    // Fill remaining slots with other schemes if needed
+    if (featured.length < 3) {
+      const remaining = othersSchemes.slice(0, 3 - featured.length);
+      featured = [...featured, ...remaining];
+    }
+    
+    // Trim to exactly 3 schemes
+    return featured.slice(0, 3);
+  }, [allSchemes, schemesLoading]);
+  
+  // Map icons for schemes
+  const getSchemeIcon = (scheme) => {
+    const category = scheme.category?.toLowerCase() || '';
+    
+    if (category.includes('agriculture')) {
+      return <Tractor className="h-5 w-5" />;
+    } else if (category.includes('healthcare') || category.includes('health')) {
+      return <Stethoscope className="h-5 w-5" />;
+    } else {
+      return <GraduationCap className="h-5 w-5" />;
+    }
+  };
 
   const recentNews = [
     {
@@ -113,21 +137,42 @@ const Home = () => {
           
           <TabsContent value="featured" className="animate-fade-in">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {featuredSchemes.map((scheme, index) => (
-                <SchemeCard 
-                  key={index}
-                  title={scheme.title}
-                  description={scheme.description}
-                  category={scheme.category}
-                  deadline={scheme.deadline}
-                  icon={scheme.icon}
-                  link={scheme.link}
-                />
-              ))}
+              {schemesLoading ? (
+                // Loading skeletons for schemes
+                [...Array(3)].map((_, index) => (
+                  <div key={index} className="rounded-lg border p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <Skeleton className="h-4 w-[100px]" />
+                    </div>
+                    <Skeleton className="h-6 w-full mb-4" />
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-5/6 mb-4" />
+                    <Skeleton className="h-10 w-full rounded" />
+                  </div>
+                ))
+              ) : featuredSchemes.length > 0 ? (
+                featuredSchemes.map((scheme, index) => (
+                  <SchemeCard 
+                    key={index}
+                    title={scheme.title}
+                    description={scheme.description}
+                    category={scheme.category}
+                    deadline={scheme.deadline}
+                    icon={getSchemeIcon(scheme)}
+                    link={scheme.link}
+                  />
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-8">
+                  <p className="text-muted-foreground">No schemes available at the moment.</p>
+                </div>
+              )}
             </div>
             <div className="mt-6 text-center">
               <Button asChild>
-                <Link to="/all-schemes">View All Schemes</Link>
+                <Link to="/agriculture">View All Schemes</Link>
               </Button>
             </div>
           </TabsContent>

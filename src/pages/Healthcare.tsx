@@ -1,59 +1,30 @@
 
 import React from 'react';
-import { Stethoscope, Heart, Baby, Activity, Pill, Users } from 'lucide-react';
+import { Stethoscope, Heart, Baby, Activity, Pill, Users, AlertCircle } from 'lucide-react';
+import { useSchemes } from '@/hooks/useSchemes';
 import SchemeCard from '@/components/SchemeCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Healthcare = () => {
-  const schemes = [
-    {
-      title: "Ayushman Bharat - Pradhan Mantri Jan Arogya Yojana",
-      description: "Health insurance coverage up to ₹5 lakh per family per year for secondary and tertiary care hospitalization.",
-      category: "Health Insurance",
-      deadline: "Ongoing",
-      icon: <Stethoscope className="h-5 w-5" />,
-      link: "/healthcare/ayushman-bharat"
-    },
-    {
-      title: "National Health Mission",
-      description: "Provides accessible, affordable, and quality healthcare to rural and vulnerable populations.",
-      category: "Healthcare Infrastructure",
-      deadline: "Ongoing",
-      icon: <Heart className="h-5 w-5" />,
-      link: "/healthcare/national-health-mission"
-    },
-    {
-      title: "Janani Suraksha Yojana",
-      description: "Safe motherhood intervention promoting institutional delivery among poor pregnant women.",
-      category: "Maternal Health",
-      deadline: "Ongoing",
-      icon: <Baby className="h-5 w-5" />,
-      link: "/healthcare/janani-suraksha"
-    },
-    {
-      title: "National AYUSH Mission",
-      description: "Promotes AYUSH medical systems through cost-effective AYUSH services and medicines.",
-      category: "Traditional Medicine",
-      deadline: "Ongoing",
-      icon: <Activity className="h-5 w-5" />,
-      link: "/healthcare/ayush-mission"
-    },
-    {
-      title: "Pradhan Mantri Bhartiya Janaushadhi Pariyojana",
-      description: "Makes quality medicines available at affordable prices through dedicated outlets.",
-      category: "Affordable Medicines",
-      deadline: "Ongoing",
-      icon: <Pill className="h-5 w-5" />,
-      link: "/healthcare/janaushadhi"
-    },
-    {
-      title: "Rashtriya Swasthya Bima Yojana",
-      description: "Health insurance scheme for Below Poverty Line (BPL) families.",
-      category: "Health Insurance",
-      deadline: "Ongoing",
-      icon: <Users className="h-5 w-5" />,
-      link: "/healthcare/swasthya-bima"
+  const { schemes, isLoading, error } = useSchemes('healthcare');
+  
+  // Map of icons by scheme title keywords
+  const getIconByTitle = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('ayushman') || lowerTitle.includes('insurance')) {
+      return <Stethoscope className="h-5 w-5" />;
+    } else if (lowerTitle.includes('mother') || lowerTitle.includes('child') || lowerTitle.includes('janani')) {
+      return <Baby className="h-5 w-5" />;
+    } else if (lowerTitle.includes('ayush') || lowerTitle.includes('traditional')) {
+      return <Activity className="h-5 w-5" />;
+    } else if (lowerTitle.includes('medicine') || lowerTitle.includes('pharma') || lowerTitle.includes('janaushadhi')) {
+      return <Pill className="h-5 w-5" />;
+    } else if (lowerTitle.includes('bima') || lowerTitle.includes('insurance')) {
+      return <Users className="h-5 w-5" />;
     }
-  ];
+    return <Heart className="h-5 w-5" />;
+  };
 
   return (
     <div className="app-container py-6">
@@ -87,19 +58,44 @@ const Healthcare = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {schemes.map((scheme, index) => (
-          <SchemeCard 
-            key={index}
-            title={scheme.title}
-            description={scheme.description}
-            category={scheme.category}
-            deadline={scheme.deadline}
-            icon={scheme.icon}
-            link={scheme.link}
-          />
-        ))}
-      </div>
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="rounded-lg border p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-4 w-[100px]" />
+              </div>
+              <Skeleton className="h-6 w-full mb-4" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-5/6 mb-4" />
+              <Skeleton className="h-10 w-full rounded" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {schemes.map((scheme, index) => (
+            <SchemeCard 
+              key={index}
+              title={scheme.title}
+              description={scheme.description}
+              category={scheme.category}
+              deadline={scheme.deadline}
+              icon={getIconByTitle(scheme.title)}
+              link={scheme.link}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

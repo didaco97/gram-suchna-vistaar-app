@@ -1,59 +1,30 @@
 
 import React from 'react';
-import { GraduationCap, BookOpen, Pencil, Code, Award, Backpack } from 'lucide-react';
+import { GraduationCap, BookOpen, Pencil, Code, Award, Backpack, AlertCircle } from 'lucide-react';
+import { useSchemes } from '@/hooks/useSchemes';
 import SchemeCard from '@/components/SchemeCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Education = () => {
-  const schemes = [
-    {
-      title: "Samagra Shiksha Abhiyan",
-      description: "Integrated scheme for school education extending from pre-school to class 12 to ensure inclusive and equitable quality education.",
-      category: "School Education",
-      deadline: "Ongoing",
-      icon: <BookOpen className="h-5 w-5" />,
-      link: "/education/samagra-shiksha"
-    },
-    {
-      title: "PM POSHAN Scheme",
-      description: "Provides mid-day meals to improve nutritional levels among children and encourage poor children to attend school more regularly.",
-      category: "Nutrition",
-      deadline: "Ongoing",
-      icon: <Backpack className="h-5 w-5" />,
-      link: "/education/pm-poshan"
-    },
-    {
-      title: "Pradhan Mantri Vidya Lakshmi Karyakram",
-      description: "Portal for students seeking education loans and scholarships for higher education in India and abroad.",
-      category: "Higher Education",
-      deadline: "Ongoing",
-      icon: <GraduationCap className="h-5 w-5" />,
-      link: "/education/vidya-lakshmi"
-    },
-    {
-      title: "National Means-cum-Merit Scholarship Scheme",
-      description: "Scholarships for meritorious students from economically weaker sections to reduce dropouts at class VIII.",
-      category: "Scholarships",
-      deadline: "Annual",
-      icon: <Award className="h-5 w-5" />,
-      link: "/education/merit-scholarship"
-    },
-    {
-      title: "Sarva Shiksha Abhiyan",
-      description: "Program aimed at universalization of elementary education as mandated by the 86th Amendment to the Constitution.",
-      category: "Elementary Education",
-      deadline: "Ongoing",
-      icon: <Pencil className="h-5 w-5" />,
-      link: "/education/sarva-shiksha"
-    },
-    {
-      title: "Pradhan Mantri Kaushal Vikas Yojana",
-      description: "Skill development initiative scheme for recognition and standardization of skills.",
-      category: "Skill Development",
-      deadline: "Ongoing",
-      icon: <Code className="h-5 w-5" />,
-      link: "/education/kaushal-vikas"
+  const { schemes, isLoading, error } = useSchemes('education');
+  
+  // Map of icons by scheme title keywords
+  const getIconByTitle = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('scholarship') || lowerTitle.includes('merit')) {
+      return <Award className="h-5 w-5" />;
+    } else if (lowerTitle.includes('poshan') || lowerTitle.includes('meal')) {
+      return <Backpack className="h-5 w-5" />;
+    } else if (lowerTitle.includes('skill') || lowerTitle.includes('kaushal')) {
+      return <Code className="h-5 w-5" />;
+    } else if (lowerTitle.includes('sarva') || lowerTitle.includes('elementary')) {
+      return <Pencil className="h-5 w-5" />;
+    } else if (lowerTitle.includes('shiksha') || lowerTitle.includes('school')) {
+      return <BookOpen className="h-5 w-5" />;
     }
-  ];
+    return <GraduationCap className="h-5 w-5" />;
+  };
 
   return (
     <div className="app-container py-6">
@@ -87,19 +58,44 @@ const Education = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {schemes.map((scheme, index) => (
-          <SchemeCard 
-            key={index}
-            title={scheme.title}
-            description={scheme.description}
-            category={scheme.category}
-            deadline={scheme.deadline}
-            icon={scheme.icon}
-            link={scheme.link}
-          />
-        ))}
-      </div>
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="rounded-lg border p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-4 w-[100px]" />
+              </div>
+              <Skeleton className="h-6 w-full mb-4" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-5/6 mb-4" />
+              <Skeleton className="h-10 w-full rounded" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {schemes.map((scheme, index) => (
+            <SchemeCard 
+              key={index}
+              title={scheme.title}
+              description={scheme.description}
+              category={scheme.category}
+              deadline={scheme.deadline}
+              icon={getIconByTitle(scheme.title)}
+              link={scheme.link}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

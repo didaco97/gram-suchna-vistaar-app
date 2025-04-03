@@ -1,2 +1,5 @@
 
 project_id = "ephxvnoufczdeewpeydn"
+
+[functions.fetch-schemes]
+verify_jwt = false

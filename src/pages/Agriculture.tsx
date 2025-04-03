@@ -1,59 +1,28 @@
 
 import React from 'react';
-import { Tractor, Leaf, Droplets, Sun, Wind } from 'lucide-react';
+import { Tractor, Leaf, Droplets, Sun, Wind, AlertCircle } from 'lucide-react';
+import { useSchemes } from '@/hooks/useSchemes';
 import SchemeCard from '@/components/SchemeCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Agriculture = () => {
-  const schemes = [
-    {
-      title: "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
-      description: "Income support of ₹6,000 per year in three equal installments to small and marginal farmer families having combined landholding of up to 2 hectares.",
-      category: "Financial Support",
-      deadline: "Ongoing",
-      icon: <Tractor className="h-5 w-5" />,
-      link: "/agriculture/pm-kisan"
-    },
-    {
-      title: "Pradhan Mantri Fasal Bima Yojana",
-      description: "Crop insurance scheme that provides comprehensive risk coverage from pre-sowing to post-harvest losses due to natural calamities.",
-      category: "Insurance",
-      deadline: "Season-based",
-      icon: <Leaf className="h-5 w-5" />,
-      link: "/agriculture/pm-fasal-bima"
-    },
-    {
-      title: "Per Drop More Crop",
-      description: "Promotes water efficiency through precision irrigation and sustainable water management practices.",
-      category: "Irrigation",
-      deadline: "Ongoing",
-      icon: <Droplets className="h-5 w-5" />,
-      link: "/agriculture/drop-more-crop"
-    },
-    {
-      title: "Soil Health Card Scheme",
-      description: "Provides information on soil health to farmers to help them improve productivity through judicious use of inputs.",
-      category: "Soil Health",
-      deadline: "Ongoing",
-      icon: <Sun className="h-5 w-5" />,
-      link: "/agriculture/soil-health-card"
-    },
-    {
-      title: "Gramin Bhandaran Yojana",
-      description: "Creates scientific storage capacity with allied facilities in rural areas to reduce post-harvest losses.",
-      category: "Storage",
-      deadline: "Ongoing",
-      icon: <Wind className="h-5 w-5" />,
-      link: "/agriculture/gramin-bhandaran"
-    },
-    {
-      title: "National Mission for Sustainable Agriculture",
-      description: "Promotes sustainable agriculture through integrated farming, appropriate soil health management, and resource conservation.",
-      category: "Sustainability",
-      deadline: "Ongoing",
-      icon: <Leaf className="h-5 w-5" />,
-      link: "/agriculture/sustainable-agriculture"
+  const { schemes, isLoading, error } = useSchemes('agriculture');
+  
+  // Map of icons by scheme title keywords
+  const getIconByTitle = (title: string) => {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('water') || lowerTitle.includes('irrigation') || lowerTitle.includes('drop')) {
+      return <Droplets className="h-5 w-5" />;
+    } else if (lowerTitle.includes('soil') || lowerTitle.includes('land')) {
+      return <Sun className="h-5 w-5" />;
+    } else if (lowerTitle.includes('storage') || lowerTitle.includes('bhandaran')) {
+      return <Wind className="h-5 w-5" />;
+    } else if (lowerTitle.includes('sustainable') || lowerTitle.includes('organic')) {
+      return <Leaf className="h-5 w-5" />;
     }
-  ];
+    return <Tractor className="h-5 w-5" />;
+  };
 
   return (
     <div className="app-container py-6">
@@ -86,19 +55,44 @@ const Agriculture = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {schemes.map((scheme, index) => (
-          <SchemeCard 
-            key={index}
-            title={scheme.title}
-            description={scheme.description}
-            category={scheme.category}
-            deadline={scheme.deadline}
-            icon={scheme.icon}
-            link={scheme.link}
-          />
-        ))}
-      </div>
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="rounded-lg border p-6">
+              <div className="flex items-center space-x-2 mb-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-4 w-[100px]" />
+              </div>
+              <Skeleton className="h-6 w-full mb-4" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-5/6 mb-4" />
+              <Skeleton className="h-10 w-full rounded" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {schemes.map((scheme, index) => (
+            <SchemeCard 
+              key={index}
+              title={scheme.title}
+              description={scheme.description}
+              category={scheme.category}
+              deadline={scheme.deadline}
+              icon={getIconByTitle(scheme.title)}
+              link={scheme.link}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
