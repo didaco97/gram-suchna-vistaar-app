@@ -16,6 +16,12 @@ interface SchemeData {
   link: string;
 }
 
+interface SchemeQueryParams {
+  category?: string;
+  searchQuery?: string;
+  sortBy?: string;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -23,31 +29,39 @@ serve(async (req) => {
   }
 
   try {
-    // Get the category from the request parameters
-    // Update to handle both query params in URL and params from function.invoke
-    let category = 'all';
+    // Initialize query parameters
+    let params: SchemeQueryParams = {
+      category: 'all',
+      searchQuery: '',
+      sortBy: 'relevance'
+    };
     
     // Check if we have URL search params
     const url = new URL(req.url);
     const urlCategory = url.searchParams.get('category');
-    if (urlCategory) {
-      category = urlCategory;
-    } 
+    const urlSearchQuery = url.searchParams.get('searchQuery');
+    const urlSortBy = url.searchParams.get('sortBy');
+    
+    if (urlCategory) params.category = urlCategory;
+    if (urlSearchQuery) params.searchQuery = urlSearchQuery;
+    if (urlSortBy) params.sortBy = urlSortBy;
     
     // Also check for body params (used by function.invoke)
     if (req.method === 'POST') {
       try {
         const body = await req.json();
-        if (body && body.category) {
-          category = body.category;
+        if (body) {
+          if (body.category) params.category = body.category;
+          if (body.searchQuery !== undefined) params.searchQuery = body.searchQuery;
+          if (body.sortBy) params.sortBy = body.sortBy;
         }
       } catch (e) {
-        // If JSON parsing fails, we already have the category from URL or default
+        // If JSON parsing fails, we already have the params from URL or default
         console.log('JSON parsing error:', e);
       }
     }
     
-    console.log(`Fetching schemes for category: ${category}`)
+    console.log(`Fetching schemes with params:`, params);
 
     if (!API_KEY) {
       throw new Error('FIRECRAWL_API_KEY is not set in the environment variables')
@@ -58,14 +72,19 @@ serve(async (req) => {
 
     // Determine the URL to scrape based on category
     let scrapeUrl = 'https://www.myscheme.gov.in/'
-    if (category !== 'all') {
+    if (params.category !== 'all') {
       // Map categories to specific URLs if needed
       const categoryMap: Record<string, string> = {
         'agriculture': 'https://www.myscheme.gov.in/schemes/domain/agriculture-and-allied',
         'healthcare': 'https://www.myscheme.gov.in/schemes/domain/health-and-wellness',
         'education': 'https://www.myscheme.gov.in/schemes/domain/skill-development-and-employment'
       }
-      scrapeUrl = categoryMap[category.toLowerCase()] || scrapeUrl
+      scrapeUrl = categoryMap[params.category.toLowerCase()] || scrapeUrl
+    }
+
+    // Add search query to URL if provided
+    if (params.searchQuery) {
+      scrapeUrl = `https://www.myscheme.gov.in/schemes/search?keyword=${encodeURIComponent(params.searchQuery)}`
     }
 
     // Make a request to Firecrawl API
@@ -104,7 +123,7 @@ serve(async (req) => {
     if (data.data && Array.isArray(data.data)) {
       schemes = data.data.map((item: any) => {
         // Determine category based on the URL or extracted data
-        let schemeCategory = item.category || category
+        let schemeCategory = item.category || params.category
         
         // Normalize category
         if (typeof schemeCategory === 'string') {
@@ -124,7 +143,7 @@ serve(async (req) => {
             schemeCategory = 'Other'
           }
         } else {
-          schemeCategory = category === 'all' ? 'Other' : category
+          schemeCategory = params.category === 'all' ? 'Other' : params.category
         }
 
         // Handle links - ensure they are absolute URLs
@@ -147,10 +166,32 @@ serve(async (req) => {
     // generate fallback data based on the category
     if (schemes.length === 0) {
       console.log('No schemes found from scraping, using fallback data')
-      schemes = generateFallbackSchemes(category)
+      schemes = generateFallbackSchemes(params.category)
+      
+      // If search query is provided, filter fallback data
+      if (params.searchQuery) {
+        const searchLower = params.searchQuery.toLowerCase();
+        schemes = schemes.filter(scheme => 
+          scheme.title.toLowerCase().includes(searchLower) ||
+          scheme.description.toLowerCase().includes(searchLower)
+        );
+      }
     }
 
-    console.log(`Returning ${schemes.length} schemes for category: ${category}`)
+    // Sort schemes based on sortBy parameter
+    if (params.sortBy === 'latest') {
+      // In a real application, you'd sort by date
+      // Here we'll just reverse the array as a simple simulation
+      schemes = schemes.reverse();
+    } else if (params.sortBy === 'deadline') {
+      // Sort by deadline (if it's a date)
+      schemes = schemes.sort((a, b) => {
+        // For this example, we'll just alphabetically sort the deadline strings
+        return (a.deadline || '').localeCompare(b.deadline || '');
+      });
+    }
+
+    console.log(`Returning ${schemes.length} schemes for params:`, params);
     
     return new Response(
       JSON.stringify({ success: true, data: schemes }),

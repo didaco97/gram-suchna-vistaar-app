@@ -11,16 +11,23 @@ export interface SchemeType {
   link: string;
 }
 
-export function useSchemes(category: string = 'all') {
+interface SchemeQueryParams {
+  category?: string;
+  searchQuery?: string;
+  sortBy?: string;
+}
+
+export function useSchemes(params: SchemeQueryParams = { category: 'all' }) {
   const [error, setError] = useState<string | null>(null);
+  const { category = 'all', searchQuery = '', sortBy = 'relevance' } = params;
 
   const fetchSchemes = async (): Promise<SchemeType[]> => {
     try {
-      console.info(`Fetching schemes for category: ${category}`);
+      console.info(`Fetching schemes with params:`, params);
       
-      // Fix: Use the correct parameter structure for Supabase edge function invocation
+      // Use the correct parameter structure for Supabase edge function invocation
       const { data, error } = await supabase.functions.invoke('fetch-schemes', {
-        body: { category }
+        body: { category, searchQuery, sortBy }
       });
       
       if (error) {
@@ -35,7 +42,7 @@ export function useSchemes(category: string = 'all') {
         return [];
       }
       
-      console.info(`Received ${data.data.length} schemes for ${category}`);
+      console.info(`Received ${data.data.length} schemes for query:`, params);
       return data.data;
     } catch (err) {
       console.error('Error fetching schemes:', err);
@@ -44,8 +51,10 @@ export function useSchemes(category: string = 'all') {
     }
   };
 
+  const queryKey = ['schemes', category, searchQuery, sortBy];
+
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['schemes', category],
+    queryKey,
     queryFn: fetchSchemes,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

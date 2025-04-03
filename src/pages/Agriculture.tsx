@@ -1,13 +1,20 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tractor, Leaf, Droplets, Sun, Wind, AlertCircle } from 'lucide-react';
 import { useSchemes } from '@/hooks/useSchemes';
 import SchemeCard from '@/components/SchemeCard';
+import SchemeSearch from '@/components/SchemeSearch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Agriculture = () => {
-  const { schemes, isLoading, error } = useSchemes('agriculture');
+  const [searchParams, setSearchParams] = useState({
+    category: 'agriculture',
+    searchQuery: '',
+    sortBy: 'relevance'
+  });
+  
+  const { schemes, isLoading, error } = useSchemes(searchParams);
   
   // Map of icons by scheme title keywords
   const getIconByTitle = (title: string) => {
@@ -24,6 +31,14 @@ const Agriculture = () => {
     return <Tractor className="h-5 w-5" />;
   };
 
+  const handleSearch = (query: string, filters: { category: string; sortBy: string }) => {
+    setSearchParams({
+      category: filters.category === 'all' ? 'agriculture' : filters.category,
+      searchQuery: query,
+      sortBy: filters.sortBy
+    });
+  };
+
   return (
     <div className="app-container py-6">
       <div className="mb-8">
@@ -32,6 +47,8 @@ const Agriculture = () => {
           Government initiatives and programs to support farmers and boost agricultural production.
         </p>
       </div>
+
+      <SchemeSearch onSearch={handleSearch} />
 
       <div className="mb-8 overflow-hidden rounded-lg bg-gramsuchna-green/10 p-6">
         <h2 className="mb-4 text-xl font-semibold text-gramsuchna-green">Why These Schemes Matter</h2>
@@ -78,7 +95,7 @@ const Agriculture = () => {
             </div>
           ))}
         </div>
-      ) : (
+      ) : schemes.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {schemes.map((scheme, index) => (
             <SchemeCard 
@@ -91,6 +108,16 @@ const Agriculture = () => {
               link={scheme.link}
             />
           ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="mb-4 rounded-full bg-gray-100 p-3">
+            <AlertCircle className="h-6 w-6 text-gray-400" />
+          </div>
+          <h3 className="mb-1 text-lg font-medium">No schemes found</h3>
+          <p className="text-muted-foreground">
+            Try adjusting your search or filter criteria to find more results.
+          </p>
         </div>
       )}
     </div>
