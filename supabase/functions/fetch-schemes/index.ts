@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const API_KEY = Deno.env.get('FIRECRAWL_API_KEY')
+const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY')
 
 interface SchemeData {
   title: string;
@@ -63,17 +63,18 @@ serve(async (req) => {
     
     console.log(`Fetching schemes with params:`, params);
 
-    if (!API_KEY) {
+    if (!FIRECRAWL_API_KEY) {
       throw new Error('FIRECRAWL_API_KEY is not set in the environment variables')
     }
 
-    // Initialize the schema data array
+    // Initialize the scheme data array
     let schemes: SchemeData[] = []
 
-    // Determine the URL to scrape based on category
+    // Determine the URL to scrape based on category and search query
     let scrapeUrl = 'https://www.myscheme.gov.in/'
+    
     if (params.category !== 'all') {
-      // Map categories to specific URLs if needed
+      // Map categories to specific URLs
       const categoryMap: Record<string, string> = {
         'agriculture': 'https://www.myscheme.gov.in/schemes/domain/agriculture-and-allied',
         'healthcare': 'https://www.myscheme.gov.in/schemes/domain/health-and-wellness',
@@ -87,41 +88,44 @@ serve(async (req) => {
       scrapeUrl = `https://www.myscheme.gov.in/schemes/search?keyword=${encodeURIComponent(params.searchQuery)}`
     }
 
-    // Make a request to Firecrawl API
+    console.log(`Scraping URL: ${scrapeUrl}`);
+
+    // Make a request to Firecrawl API to scrape schemes
     const response = await fetch('https://api.firecrawl.dev/scrape', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`
       },
       body: JSON.stringify({
         url: scrapeUrl,
-        selector: '.scheme-card', // Adjust selector based on the actual HTML structure
+        selector: '.scheme-list .scheme-item', // Adjust selector based on the actual HTML structure
         maxPages: 3,
         actions: [
           {
             type: 'extractData',
             config: {
-              title: '.scheme-title',
-              description: '.scheme-description',
-              link: { selector: '.scheme-link', attribute: 'href' },
-              deadline: '.scheme-deadline',
-              category: '.scheme-category'
+              title: { selector: 'h3.scheme-title', text: true },
+              description: { selector: '.scheme-description', text: true },
+              link: { selector: 'a.scheme-details', attribute: 'href' },
+              deadline: { selector: '.scheme-deadline', text: true },
+              category: { selector: '.scheme-category', text: true }
             }
           }
         ]
       })
     })
 
-    const data = await response.json()
+    const firecrawlData = await response.json()
     
-    if (!data.success) {
-      throw new Error(`Firecrawl API error: ${data.error || 'Unknown error'}`)
+    if (!firecrawlData.success) {
+      console.error('Firecrawl API error:', firecrawlData.error || 'Unknown error');
+      throw new Error(`Firecrawl API error: ${firecrawlData.error || 'Unknown error'}`)
     }
 
     // Process the scraped data
-    if (data.data && Array.isArray(data.data)) {
-      schemes = data.data.map((item: any) => {
+    if (firecrawlData.data && Array.isArray(firecrawlData.data)) {
+      schemes = firecrawlData.data.map((item: any) => {
         // Determine category based on the URL or extracted data
         let schemeCategory = item.category || params.category
         

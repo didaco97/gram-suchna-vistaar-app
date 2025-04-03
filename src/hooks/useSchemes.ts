@@ -11,13 +11,13 @@ export interface SchemeType {
   link: string;
 }
 
-interface SchemeQueryParams {
+export interface SchemeQueryParams {
   category?: string;
   searchQuery?: string;
   sortBy?: string;
 }
 
-export function useSchemes(params: SchemeQueryParams = { category: 'all' }) {
+export function useSchemes(params: SchemeQueryParams = {}) {
   const [error, setError] = useState<string | null>(null);
   const { category = 'all', searchQuery = '', sortBy = 'relevance' } = params;
 

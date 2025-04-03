@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Healthcare = () => {
-  const { schemes, isLoading, error } = useSchemes('healthcare');
+  const { schemes, isLoading, error } = useSchemes({ category: 'healthcare' });
   
   // Map of icons by scheme title keywords
   const getIconByTitle = (title: string) => {

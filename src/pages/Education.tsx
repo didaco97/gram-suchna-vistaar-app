@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Education = () => {
-  const { schemes, isLoading, error } = useSchemes('education');
+  const { schemes, isLoading, error } = useSchemes({ category: 'education' });
   
   // Map of icons by scheme title keywords
   const getIconByTitle = (title: string) => {
