@@ -7,10 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
+import { useTranslation } from "react-i18next";
+import { useToast } from "@/components/ui/use-toast";
 
 export const AuthForms = () => {
   const { signIn, signUp, loading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { toast } = useToast();
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -37,6 +41,11 @@ export const AuthForms = () => {
     
     // Validate password match
     if (registerData.password !== registerData.confirmPassword) {
+      toast({
+        title: t('error'),
+        description: t('passwords_dont_match'),
+        variant: "destructive"
+      });
       return;
     }
     
@@ -47,22 +56,22 @@ export const AuthForms = () => {
     <div className="mx-auto w-full max-w-md">
       <Tabs defaultValue="login" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="register">Register</TabsTrigger>
+          <TabsTrigger value="login">{t('login')}</TabsTrigger>
+          <TabsTrigger value="register">{t('register')}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="login">
           <Card>
             <CardHeader>
-              <CardTitle>Login</CardTitle>
+              <CardTitle>{t('login')}</CardTitle>
               <CardDescription>
-                Access your Gram Suchna account
+                {t('access_account')}
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleLogin}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('email')}</Label>
                   <Input 
                     id="email" 
                     type="email" 
@@ -74,9 +83,9 @@ export const AuthForms = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">{t('password')}</Label>
                     <Button variant="link" size="sm" className="text-xs" type="button">
-                      Forgot password?
+                      {t('forgot_password')}
                     </Button>
                   </div>
                   <Input 
@@ -91,7 +100,7 @@ export const AuthForms = () => {
               </CardContent>
               <CardFooter>
                 <Button type="submit" className="w-full bg-gramsuchna-green hover:bg-gramsuchna-green/90" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? t('logging_in') : t('login')}
                 </Button>
               </CardFooter>
             </form>
@@ -101,15 +110,15 @@ export const AuthForms = () => {
         <TabsContent value="register">
           <Card>
             <CardHeader>
-              <CardTitle>Create an account</CardTitle>
+              <CardTitle>{t('create_account')}</CardTitle>
               <CardDescription>
-                Join Gram Suchna for village information and updates
+                {t('join_gram_suchna')}
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleRegister}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
+                  <Label htmlFor="register-email">{t('email')}</Label>
                   <Input 
                     id="register-email" 
                     type="email" 
@@ -120,7 +129,7 @@ export const AuthForms = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="register-password">Password</Label>
+                  <Label htmlFor="register-password">{t('password')}</Label>
                   <Input 
                     id="register-password" 
                     type="password" 
@@ -131,7 +140,7 @@ export const AuthForms = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Label htmlFor="confirm-password">{t('confirm_password')}</Label>
                   <Input 
                     id="confirm-password" 
                     type="password" 
@@ -144,7 +153,7 @@ export const AuthForms = () => {
               </CardContent>
               <CardFooter>
                 <Button type="submit" className="w-full bg-gramsuchna-green hover:bg-gramsuchna-green/90" disabled={loading}>
-                  {loading ? "Creating account..." : "Create account"}
+                  {loading ? t('creating_account') : t('create_account')}
                 </Button>
               </CardFooter>
             </form>

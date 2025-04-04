@@ -27,16 +27,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
+      console.log('Auth state changed:', event, currentSession?.user?.id);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (event === 'SIGNED_OUT') {
         setProfile(null);
+      } else if (event === 'SIGNED_IN' && currentSession?.user) {
+        // Use setTimeout to prevent deadlocks
+        setTimeout(() => {
+          fetchProfile(currentSession.user.id);
+        }, 0);
       }
     });
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('Initial session check:', currentSession?.user?.id);
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
@@ -54,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -65,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      console.log('Profile fetched:', data);
       setProfile(data as ProfileType);
     } catch (error) {
       console.error('Error in fetchProfile:', error);
@@ -74,17 +83,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('Signing in with:', email);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) throw error;
       
-      if (data.user) {
-        fetchProfile(data.user.id);
-        toast({
-          title: "Logged in successfully",
-          description: "Welcome back to Gram Suchna",
-        });
-      }
+      console.log('Sign in successful:', data.user?.id);
+      
+      toast({
+        title: "Logged in successfully",
+        description: "Welcome back to Gram Suchna",
+      });
     } catch (error: any) {
       toast({
         title: "Login failed",
@@ -100,9 +109,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('Signing up with:', email);
       const { data, error } = await supabase.auth.signUp({ email, password });
       
       if (error) throw error;
+      
+      console.log('Sign up successful:', data.user?.id);
       
       toast({
         title: "Registration successful",
@@ -122,10 +134,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      console.log('Signing out');
+      if (!session) {
+        console.warn('No active session found when trying to sign out');
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        return;
+      }
+      
       setLoading(true);
       const { error } = await supabase.auth.signOut();
       
       if (error) throw error;
+      
+      console.log('Sign out successful');
       
       toast({
         title: "Logged out successfully",
