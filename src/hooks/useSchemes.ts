@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 
 export interface SchemeType {
   title: string;
@@ -20,14 +21,15 @@ export interface SchemeQueryParams {
 export function useSchemes(params: SchemeQueryParams = {}) {
   const [error, setError] = useState<string | null>(null);
   const { category = 'all', searchQuery = '', sortBy = 'relevance' } = params;
+  const { language } = useLanguage();
 
   const fetchSchemes = async (): Promise<SchemeType[]> => {
     try {
-      console.info(`Fetching schemes with params:`, params);
+      console.info(`Fetching schemes with params:`, {...params, language});
       
       // Use the correct parameter structure for Supabase edge function invocation
       const { data, error } = await supabase.functions.invoke('fetch-schemes', {
-        body: { category, searchQuery, sortBy }
+        body: { category, searchQuery, sortBy, language }
       });
       
       if (error) {
@@ -42,7 +44,7 @@ export function useSchemes(params: SchemeQueryParams = {}) {
         return [];
       }
       
-      console.info(`Received ${data.data.length} schemes for query:`, params);
+      console.info(`Received ${data.data.length} schemes for query:`, {...params, language});
       return data.data;
     } catch (err) {
       console.error('Error fetching schemes:', err);
@@ -51,7 +53,7 @@ export function useSchemes(params: SchemeQueryParams = {}) {
     }
   };
 
-  const queryKey = ['schemes', category, searchQuery, sortBy];
+  const queryKey = ['schemes', category, searchQuery, sortBy, language];
 
   const { data, isLoading, refetch } = useQuery({
     queryKey,

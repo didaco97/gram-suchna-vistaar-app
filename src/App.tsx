@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Agriculture from "./pages/Agriculture";
@@ -23,20 +24,22 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
-              <Route path="agriculture" element={<Agriculture />} />
-              <Route path="healthcare" element={<Healthcare />} />
-              <Route path="education" element={<Education />} />
-              <Route path="news" element={<News />} />
-              <Route path="login" element={<Login />} />
-              <Route path="profile" element={<Profile />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <LanguageProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Home />} />
+                <Route path="agriculture" element={<Agriculture />} />
+                <Route path="healthcare" element={<Healthcare />} />
+                <Route path="education" element={<Education />} />
+                <Route path="news" element={<News />} />
+                <Route path="login" element={<Login />} />
+                <Route path="profile" element={<Profile />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </LanguageProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

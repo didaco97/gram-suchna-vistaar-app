@@ -20,10 +20,11 @@ interface NewsParams {
   query: string;
   location?: string;
   refresh?: boolean;
+  language?: string;
 }
 
 async function fetchNews(params: NewsParams) {
-  const { query, location, refresh = false } = params;
+  const { query, location, refresh = false, language = 'en' } = params;
   
   // Build the search query with location if available
   let searchQuery = query;
@@ -42,13 +43,20 @@ async function fetchNews(params: NewsParams) {
   url.searchParams.append("q", searchQuery);
   url.searchParams.append("num", "10"); // Increased to 10 news articles
   
+  // Set language parameter for SerpAPI
+  const langParam = languageToSerpApiCode(language);
+  if (langParam) {
+    url.searchParams.append("hl", langParam);
+    url.searchParams.append("gl", langParam.split('-')[0]);
+  }
+  
   // Add a cache-busting parameter if refresh is requested
   if (refresh) {
     url.searchParams.append("_", Date.now().toString());
   }
   
   try {
-    console.log(`Fetching news for query: "${searchQuery}" with refresh=${refresh}`);
+    console.log(`Fetching news for query: "${searchQuery}" with language: ${language} and refresh=${refresh}`);
     const response = await fetch(url.toString(), {
       headers: {
         "Cache-Control": refresh ? "no-cache" : "default"
@@ -80,23 +88,35 @@ async function fetchNews(params: NewsParams) {
         .slice(0, 10);
     }
     
-    // Add category metadata to each news item
+    // Add category and language metadata to each news item
     const validatedResults = newsResults.map((item: any) => ({
       title: typeof item.title === 'string' ? item.title : "Untitled",
       link: typeof item.link === 'string' ? item.link : "#",
       snippet: typeof item.snippet === 'string' ? item.snippet : "",
       source: typeof item.source === 'string' ? item.source : "News Source",
       date: typeof item.date === 'string' ? item.date : "Recent",
-      // Include the original search category as metadata
-      category: query.toLowerCase()
+      // Include the original search category and language as metadata
+      category: query.toLowerCase(),
+      language: language
     }));
     
-    console.log(`Extracted ${validatedResults.length} news results for "${searchQuery}"`);
+    console.log(`Extracted ${validatedResults.length} news results for "${searchQuery}" in ${language}`);
     return validatedResults;
   } catch (error) {
     console.error("Error fetching news:", error);
     throw error;
   }
+}
+
+// Helper function to convert our language codes to SerpAPI language codes
+function languageToSerpApiCode(language: string): string {
+  const mapping: Record<string, string> = {
+    'en': 'en-US',
+    'hi': 'hi-IN',
+    'mr': 'mr-IN'
+  };
+  
+  return mapping[language] || 'en-US';
 }
 
 serve(async (req) => {
@@ -138,9 +158,9 @@ serve(async (req) => {
     
     // Get request parameters
     const requestData = await req.json();
-    const { category, refresh = false } = requestData;
+    const { category, refresh = false, language = 'en' } = requestData;
     
-    console.log(`Requested category: ${category || "news"} with refresh=${refresh}`);
+    console.log(`Requested category: ${category || "news"} with language: ${language} and refresh=${refresh}`);
     
     // Build location string from profile
     let location = "";
@@ -155,12 +175,13 @@ serve(async (req) => {
     console.log(`User location: ${location || "Unknown"}`);
     
     try {
-      // Fetch news based on category and location
+      // Fetch news based on category, location and language
       // Ensure we're using the exact category string from the request
       const newsResults = await fetchNews({
         query: category || "news",
         location: location || undefined,
-        refresh
+        refresh,
+        language
       });
       
       return new Response(
@@ -168,7 +189,8 @@ serve(async (req) => {
           news: newsResults,
           location: location || "Unknown",
           category: category || "news", // Return the original category
-          refreshed: refresh // Include information about whether this was a refresh
+          refreshed: refresh, // Include information about whether this was a refresh
+          language: language // Include the language used for the query
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
