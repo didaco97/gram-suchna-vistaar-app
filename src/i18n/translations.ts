@@ -53,7 +53,7 @@ export const translations = {
     
     // Scheme Card
     viewDetails: 'View Details',
-    deadline: 'Deadline',
+    deadlineLabel: 'Deadline',
     
     // News
     loadLatestNews: 'Load Latest News',
@@ -83,7 +83,7 @@ export const translations = {
     sortBy: 'Sort By',
     relevance: 'Relevance',
     newest: 'Newest',
-    deadline: 'Deadline',
+    deadlineSort: 'Deadline',
     searchResults: 'Search Results',
     noResults: 'No results found',
     
@@ -127,7 +127,7 @@ export const translations = {
     
     // Scheme Card
     viewDetails: 'विवरण देखें',
-    deadline: 'समय सीमा',
+    deadlineLabel: 'समय सीमा',
     
     // News
     loadLatestNews: 'नवीनतम समाचार लोड करें',
@@ -157,7 +157,7 @@ export const translations = {
     sortBy: 'क्रमबद्ध करें',
     relevance: 'प्रासंगिकता',
     newest: 'नवीनतम',
-    deadline: 'समय सीमा',
+    deadlineSort: 'समय सीमा',
     searchResults: 'खोज परिणाम',
     noResults: 'कोई परिणाम नहीं मिला',
     
@@ -201,7 +201,7 @@ export const translations = {
     
     // Scheme Card
     viewDetails: 'तपशील पहा',
-    deadline: 'अंतिम तारीख',
+    deadlineLabel: 'अंतिम तारीख',
     
     // News
     loadLatestNews: 'नवीनतम बातम्या लोड करा',
@@ -231,7 +231,7 @@ export const translations = {
     sortBy: 'क्रमवारी',
     relevance: 'संबंधितता',
     newest: 'नवीनतम',
-    deadline: 'अंतिम तारीख',
+    deadlineSort: 'अंतिम तारीख',
     searchResults: 'शोध परिणाम',
     noResults: 'कोणतेही परिणाम सापडले नाहीत',
     
