@@ -57,6 +57,8 @@ async function fetchNews(params: NewsParams) {
   
   try {
     console.log(`Fetching news for query: "${searchQuery}" with language: ${language} and refresh=${refresh}`);
+    console.log(`Full URL: ${url.toString()}`);
+    
     const response = await fetch(url.toString(), {
       headers: {
         "Cache-Control": refresh ? "no-cache" : "default"
@@ -70,6 +72,7 @@ async function fetchNews(params: NewsParams) {
     }
     
     const data = await response.json();
+    console.log(`SerpAPI response:`, JSON.stringify(data).substring(0, 200) + "...");
     
     // Check if we have news_results, otherwise try to extract news from organic_results
     let newsResults = data.news_results || [];
