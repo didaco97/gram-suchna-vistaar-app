@@ -6,18 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/components/ui/use-toast';
-import { useLanguage } from '@/context/LanguageContext';
-import LanguageSelector from './LanguageSelector';
 
 const Navbar = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const { t } = useLanguage();
   
   const handleNotificationClick = () => {
     toast({
-      title: t('notifications'),
-      description: t('noNotifications'),
+      title: "Notifications",
+      description: "You have no new notifications",
     });
   };
 
@@ -36,23 +33,23 @@ const Navbar = () => {
                 <SheetContent side="left" className="w-[250px] sm:w-[300px]">
                   <div className="flex flex-col gap-4 py-4">
                     <Link to="/" className="text-lg font-semibold text-gramsuchna-green">
-                      {t('nativeAppName')} ({t('appName')})
+                      ग्राम सूचना (Gram Suchna)
                     </Link>
                     <div className="flex flex-col space-y-3 pt-4">
                       <Link to="/" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gramsuchna-cream hover:text-gramsuchna-green">
-                        {t('home')}
+                        Home
                       </Link>
                       <Link to="/agriculture" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gramsuchna-cream hover:text-gramsuchna-green">
-                        {t('agriculture')}
+                        Agriculture
                       </Link>
                       <Link to="/healthcare" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gramsuchna-cream hover:text-gramsuchna-green">
-                        {t('healthcare')}
+                        Healthcare
                       </Link>
                       <Link to="/education" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gramsuchna-cream hover:text-gramsuchna-green">
-                        {t('education')}
+                        Education
                       </Link>
                       <Link to="/news" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gramsuchna-cream hover:text-gramsuchna-green">
-                        {t('localNews')}
+                        Local News
                       </Link>
                     </div>
                   </div>
@@ -61,7 +58,7 @@ const Navbar = () => {
             )}
             <Link to="/" className="flex items-center space-x-2">
               <span className="text-xl font-bold text-gramsuchna-green">
-                {isMobile ? "GS" : `${t('nativeAppName')} (${t('appName')})`}
+                {isMobile ? "GS" : "ग्राम सूचना (Gram Suchna)"}
               </span>
             </Link>
           </div>
@@ -69,25 +66,24 @@ const Navbar = () => {
           {!isMobile && (
             <div className="hidden md:flex md:items-center md:space-x-6">
               <Link to="/" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-gramsuchna-green">
-                {t('home')}
+                Home
               </Link>
               <Link to="/agriculture" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-gramsuchna-green">
-                {t('agriculture')}
+                Agriculture
               </Link>
               <Link to="/healthcare" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-gramsuchna-green">
-                {t('healthcare')}
+                Healthcare
               </Link>
               <Link to="/education" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-gramsuchna-green">
-                {t('education')}
+                Education
               </Link>
               <Link to="/news" className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:text-gramsuchna-green">
-                {t('localNews')}
+                Local News
               </Link>
             </div>
           )}
           
-          <div className="flex items-center space-x-2">
-            <LanguageSelector />
+          <div className="flex items-center space-x-4">
             <Button 
               variant="ghost" 
               size="icon" 

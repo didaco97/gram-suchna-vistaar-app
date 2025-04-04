@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, AlertCircle, MapPin, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/context/LanguageContext';
 
 // News item type definition
 interface NewsItem {
@@ -31,7 +30,6 @@ interface SerpNewsItem {
 const News = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  const { language, t } = useLanguage();
   const [loading, setLoading] = useState<Record<string, boolean>>({
     'local': false,
     'agriculture': false,
@@ -73,16 +71,10 @@ const News = () => {
     try {
       console.log(`Fetching news for category: ${category}`);
       const { data, error } = await supabase.functions.invoke('fetch-news', {
-        body: { 
-          category, 
-          refresh: true,
-          language
-        }
+        body: { category, refresh: true }
       });
       
       if (error) throw new Error(error.message);
-      
-      console.log("News API response:", data);
       
       // Update location from the API response
       if (data.location) {
@@ -115,12 +107,12 @@ const News = () => {
           break;
       }
       
-    } catch (err: any) {
+    } catch (err) {
       console.error(`Error fetching ${category} news:`, err);
       setError(`Failed to load ${category} news. Please try again later.`);
       toast({
         title: "Error",
-        description: `Failed to load ${category} news: ${err.message}`,
+        description: `Failed to load ${category} news. Please try again later.`,
         variant: "destructive"
       });
     } finally {
@@ -151,7 +143,7 @@ const News = () => {
       fetchCategoryNews('healthcare');
       fetchCategoryNews('education');
     }
-  }, [user, profile, language]);
+  }, [user, profile]);
   
   // Function to refresh all news categories
   const handleRefreshAllNews = async () => {
@@ -178,11 +170,11 @@ const News = () => {
         title: "News Updated",
         description: "Latest news has been loaded successfully!",
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error refreshing news:', err);
       toast({
         title: "Error",
-        description: `Failed to refresh news: ${err.message}`,
+        description: "Failed to refresh news. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -288,9 +280,9 @@ const News = () => {
   return (
     <div className="app-container py-6">
       <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold text-gramsuchna-brown">{t('localNews')}</h1>
+        <h1 className="mb-2 text-3xl font-bold text-gramsuchna-brown">Local News & Updates</h1>
         <p className="text-muted-foreground">
-          {t('newsDesc')}
+          Stay informed about the latest happenings, events, and announcements in your area.
         </p>
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center text-sm text-muted-foreground">
@@ -310,13 +302,13 @@ const News = () => {
           >
             {refreshing ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                <span>{t('fetchingNews')}</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Refreshing...</span>
               </>
             ) : (
               <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                <span>{t('loadLatestNews')}</span>
+                <RefreshCw className="h-4 w-4" />
+                <span>Load Latest News</span>
               </>
             )}
           </Button>

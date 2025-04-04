@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
-import { useLanguage } from '@/context/LanguageContext';
 
 interface SchemeCardProps {
   title: string;
@@ -23,8 +22,6 @@ const SchemeCard: React.FC<SchemeCardProps> = ({
   icon,
   link 
 }) => {
-  const { t } = useLanguage();
-  
   return (
     <Card className="scheme-card overflow-hidden">
       <CardHeader className="pb-2">
@@ -39,7 +36,7 @@ const SchemeCard: React.FC<SchemeCardProps> = ({
           </div>
           {deadline && (
             <div className="text-xs text-muted-foreground">
-              {t('deadline')}: <span className="font-medium text-gramsuchna-orange">{deadline}</span>
+              Deadline: <span className="font-medium text-gramsuchna-orange">{deadline}</span>
             </div>
           )}
         </div>
@@ -60,7 +57,7 @@ const SchemeCard: React.FC<SchemeCardProps> = ({
           asChild
         >
           <a href={link}>
-            <span>{t('viewDetails')}</span>
+            <span>View Details</span>
             <ArrowRight className="ml-2 h-4 w-4" />
           </a>
         </Button>
