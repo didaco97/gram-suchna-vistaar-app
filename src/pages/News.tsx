@@ -5,7 +5,7 @@ import NewsCard from '@/components/NewsCard';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, AlertCircle, MapPin } from 'lucide-react';
+import { Loader2, AlertCircle, MapPin, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // News item type definition
@@ -36,6 +36,7 @@ const News = () => {
     'healthcare': false,
     'education': false
   });
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useState<string>('');
   
@@ -70,7 +71,7 @@ const News = () => {
     try {
       console.log(`Fetching news for category: ${category}`);
       const { data, error } = await supabase.functions.invoke('fetch-news', {
-        body: { category }
+        body: { category, refresh: true }
       });
       
       if (error) throw new Error(error.message);
@@ -143,6 +144,43 @@ const News = () => {
       fetchCategoryNews('education');
     }
   }, [user, profile]);
+  
+  // Function to refresh all news categories
+  const handleRefreshAllNews = async () => {
+    if (refreshing) return;
+    
+    setRefreshing(true);
+    setError(null);
+    
+    try {
+      toast({
+        title: "Refreshing News",
+        description: "Fetching the latest news from all categories...",
+      });
+      
+      // Fetch news for each category with refresh flag
+      await Promise.all([
+        fetchCategoryNews('local news'),
+        fetchCategoryNews('agriculture'),
+        fetchCategoryNews('healthcare'),
+        fetchCategoryNews('education')
+      ]);
+      
+      toast({
+        title: "News Updated",
+        description: "Latest news has been loaded successfully!",
+      });
+    } catch (err) {
+      console.error('Error refreshing news:', err);
+      toast({
+        title: "Error",
+        description: "Failed to refresh news. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
   
   // Fallback for when the API doesn't return results or while loading
   const getFallbackNews = (category: string): NewsItem[] => {
@@ -246,12 +284,35 @@ const News = () => {
         <p className="text-muted-foreground">
           Stay informed about the latest happenings, events, and announcements in your area.
         </p>
-        {location && (
-          <div className="mt-2 flex items-center text-sm text-muted-foreground">
-            <MapPin className="mr-1 h-4 w-4" />
-            <span>News for: {location}</span>
+        <div className="mt-2 flex items-center justify-between">
+          <div className="flex items-center text-sm text-muted-foreground">
+            {location && (
+              <>
+                <MapPin className="mr-1 h-4 w-4" />
+                <span>News for: {location}</span>
+              </>
+            )}
           </div>
-        )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-gramsuchna-green hover:bg-gramsuchna-cream"
+            onClick={handleRefreshAllNews}
+            disabled={refreshing || Object.values(loading).some(isLoading => isLoading)}
+          >
+            {refreshing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Refreshing...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                <span>Load Latest News</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="all">
@@ -262,33 +323,28 @@ const News = () => {
           <TabsTrigger value="education">Education</TabsTrigger>
         </TabsList>
         
-        {Object.values(loading).some(isLoading => isLoading) && (
+        {(Object.values(loading).some(isLoading => isLoading) || refreshing) && (
           <div className="flex h-40 w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-gramsuchna-green" />
             <span className="ml-2">Loading news...</span>
           </div>
         )}
         
-        {error && !Object.values(loading).some(isLoading => isLoading) && (
+        {error && !Object.values(loading).some(isLoading => isLoading) && !refreshing && (
           <div className="flex h-40 w-full flex-col items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4">
             <AlertCircle className="h-8 w-8 text-red-500" />
             <p className="mt-2 text-center text-red-600">{error}</p>
             <Button 
               variant="outline" 
               className="mt-4"
-              onClick={() => {
-                fetchCategoryNews('local news');
-                fetchCategoryNews('agriculture');
-                fetchCategoryNews('healthcare');
-                fetchCategoryNews('education');
-              }}
+              onClick={handleRefreshAllNews}
             >
               Try Again
             </Button>
           </div>
         )}
         
-        {!Object.values(loading).some(isLoading => isLoading) && !error && (
+        {!Object.values(loading).some(isLoading => isLoading) && !error && !refreshing && (
           <>
             <TabsContent value="all" className="animate-fade-in">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">

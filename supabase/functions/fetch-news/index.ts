@@ -19,10 +19,11 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 interface NewsParams {
   query: string;
   location?: string;
+  refresh?: boolean;
 }
 
 async function fetchNews(params: NewsParams) {
-  const { query, location } = params;
+  const { query, location, refresh = false } = params;
   
   // Build the search query with location if available
   let searchQuery = query;
@@ -41,9 +42,18 @@ async function fetchNews(params: NewsParams) {
   url.searchParams.append("q", searchQuery);
   url.searchParams.append("num", "10"); // Increased to 10 news articles
   
+  // Add a cache-busting parameter if refresh is requested
+  if (refresh) {
+    url.searchParams.append("_", Date.now().toString());
+  }
+  
   try {
-    console.log(`Fetching news for query: "${searchQuery}"`);
-    const response = await fetch(url.toString());
+    console.log(`Fetching news for query: "${searchQuery}" with refresh=${refresh}`);
+    const response = await fetch(url.toString(), {
+      headers: {
+        "Cache-Control": refresh ? "no-cache" : "default"
+      }
+    });
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -128,9 +138,9 @@ serve(async (req) => {
     
     // Get request parameters
     const requestData = await req.json();
-    const { category } = requestData;
+    const { category, refresh = false } = requestData;
     
-    console.log(`Requested category: ${category || "news"}`);
+    console.log(`Requested category: ${category || "news"} with refresh=${refresh}`);
     
     // Build location string from profile
     let location = "";
@@ -149,14 +159,16 @@ serve(async (req) => {
       // Ensure we're using the exact category string from the request
       const newsResults = await fetchNews({
         query: category || "news",
-        location: location || undefined
+        location: location || undefined,
+        refresh
       });
       
       return new Response(
         JSON.stringify({ 
           news: newsResults,
           location: location || "Unknown",
-          category: category || "news" // Return the original category
+          category: category || "news", // Return the original category
+          refreshed: refresh // Include information about whether this was a refresh
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
